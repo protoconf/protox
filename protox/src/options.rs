@@ -349,20 +349,28 @@ impl Message for OptionSet {
     }
 
     fn clear(&mut self) {
-        todo!("need this to parse extension options from bytes")
+        self.fields.clear();
+        self.uninterpreted_options.clear();
     }
 
     fn merge_field<B>(
         &mut self,
-        _: u32,
-        _: WireType,
-        _: &mut B,
-        _: DecodeContext,
+        tag: u32,
+        wire_type: WireType,
+        buf: &mut B,
+        ctx: DecodeContext,
     ) -> Result<(), DecodeError>
     where
         B: Buf,
         Self: Sized,
     {
-        todo!("need this to parse extension options from bytes")
+        if tag == tag::message::options::MAP_ENTRY as u32 && wire_type == WireType::Varint {
+            self.fields
+                .entry(tag)
+                .or_insert(Value::Bool(prost::encoding::decode_varint(buf)? != 0));
+            return Ok(());
+        }
+
+        prost::encoding::skip_field(wire_type, tag, buf, ctx)
     }
 }
